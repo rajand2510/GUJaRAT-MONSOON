@@ -216,7 +216,7 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
               {/* Fake track for visual (always visible) */}
               <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-1 md:h-1.5 bg-black/40 rounded-full pointer-events-none transition-all duration-300 shadow-inner group-hover:h-2">
                 <div 
-                  className="absolute left-0 top-0 h-full bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-all duration-75 overflow-hidden wavy-track"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-[12px] rounded-full transition-all duration-75 overflow-hidden wavy-track"
                   style={{ 
                     width: `${scrubTime !== null ? (scrubTime/duration)*100 : progress}%`,
                     animationPlayState: (!isPlaying || isDragging) ? 'paused' : 'running'
