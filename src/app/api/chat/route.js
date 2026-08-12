@@ -50,8 +50,8 @@ export async function POST(request) {
     }
 
     if (type === 'playerState' && playerState) {
-      // Set the player state with a 24-hour expiration
-      await redis.set(`room_player:${room}`, JSON.stringify(playerState), { ex: 60 * 60 * 24 });
+      // Set the player state with a 5-minute expiration
+      await redis.set(`room_player:${room}`, JSON.stringify(playerState), { ex: 300 });
       return NextResponse.json({ success: true });
     }
 
@@ -74,8 +74,8 @@ export async function POST(request) {
       // Trim the list to keep only the latest 50 messages
       await redis.ltrim(`room_chat:${room}`, 0, 49);
       
-      // Set an expiration of 24 hours
-      await redis.expire(`room_chat:${room}`, 60 * 60 * 24);
+      // Set an expiration of 5 minutes (300 seconds)
+      await redis.expire(`room_chat:${room}`, 300);
 
       return NextResponse.json({ success: true, message: newMessage });
     }
