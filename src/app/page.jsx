@@ -9,6 +9,8 @@ import Hero from '../components/Hero';
 import MusicPlayer from '../components/MusicPlayer';
 import CustomCursor from '../components/CustomCursor';
 import ChatPanel from '../components/ChatPanel';
+import AmbientMixer from '../components/AmbientMixer';
+import ProverbsWidget from '../components/ProverbsWidget';
 import { songs } from '../data/songs';
 
 function App() {
@@ -18,6 +20,7 @@ function App() {
   const [currentSong, setCurrentSong] = useState(songs[0]); // Default to first song (Alakh Nu)
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeRoom, setActiveRoom] = useState(null);
+  const [activeEffects, setActiveEffects] = useState({ rain: false, lightning: false, wind: false });
   const lastSyncTimestampRef = useRef(0);
 
   useEffect(() => {
@@ -109,7 +112,7 @@ function App() {
   return (
     <div className="relative w-full h-screen overflow-hidden cursor-none">
       <CustomCursor mousePosition={mousePosition} />
-      <Background mousePosition={mousePosition} bgImage={backgrounds[bgIndex]} />
+      <Background mousePosition={mousePosition} bgImage={backgrounds[bgIndex]} activeEffects={activeEffects} />
       
       <div className="relative z-10 w-full h-full flex flex-col">
         <Navbar />
@@ -138,6 +141,9 @@ function App() {
             />
           )}
         </AnimatePresence>
+
+        <AmbientMixer activeEffects={activeEffects} setActiveEffects={setActiveEffects} />
+        <ProverbsWidget />
         
         {/* Unique Cinematic Scene Preview */}
         <div 

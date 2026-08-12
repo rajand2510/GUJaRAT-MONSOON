@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { useEffect, useState, useRef } from 'react';
+import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 
 export default function CustomCursor({ mousePosition }) {
   // Use framer-motion motion values for smooth following
@@ -14,6 +14,10 @@ export default function CustomCursor({ mousePosition }) {
   const [isClicking, setIsClicking] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  
+  // Ripple state
+  const [ripples, setRipples] = useState([]);
+  const lastRipplePos = useRef({ x: -100, y: -100 });
 
   useEffect(() => {
     // Check if device supports touch (mobile/tablet)
@@ -23,10 +27,32 @@ export default function CustomCursor({ mousePosition }) {
   useEffect(() => {
     cursorX.set(mousePosition.x);
     cursorY.set(mousePosition.y);
-  }, [mousePosition, cursorX, cursorY]);
+
+    if (!isTouchDevice) {
+      // Spawn ripple on move if distance is enough
+      const dist = Math.hypot(mousePosition.x - lastRipplePos.current.x, mousePosition.y - lastRipplePos.current.y);
+      if (dist > 60) {
+        lastRipplePos.current = { x: mousePosition.x, y: mousePosition.y };
+        const newRipple = { id: Date.now() + Math.random(), x: mousePosition.x, y: mousePosition.y, isClick: false };
+        setRipples(prev => [...prev.slice(-15), newRipple]); // keep max 15 ripples to avoid DOM bloat
+        setTimeout(() => {
+          setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+        }, 1000);
+      }
+    }
+  }, [mousePosition, cursorX, cursorY, isTouchDevice]);
 
   useEffect(() => {
-    const handleMouseDown = () => setIsClicking(true);
+    const handleMouseDown = (e) => {
+      setIsClicking(true);
+      // Spawn a larger ripple on click
+      const clickRipple = { id: Date.now() + Math.random(), x: e.clientX, y: e.clientY, isClick: true };
+      setRipples(prev => [...prev.slice(-15), clickRipple]);
+      setTimeout(() => {
+        setRipples(prev => prev.filter(r => r.id !== clickRipple.id));
+      }, 1000);
+    };
+    
     const handleMouseUp = () => setIsClicking(false);
     
     const handleMouseOver = (e) => {
@@ -86,6 +112,27 @@ export default function CustomCursor({ mousePosition }) {
         }}
         transition={{ duration: 0.2, type: 'tween' }}
       />
+
+      {/* Ripple effects */}
+      {ripples.map(r => (
+        <motion.div
+          key={r.id}
+          className="fixed top-0 left-0 border border-white/30 rounded-full pointer-events-none z-[98] mix-blend-overlay"
+          initial={{ 
+            x: r.x, y: r.y, 
+            width: r.isClick ? 10 : 20, 
+            height: r.isClick ? 10 : 20, 
+            translateX: '-50%', translateY: '-50%',
+            opacity: r.isClick ? 0.8 : 0.4
+          }}
+          animate={{ 
+            width: r.isClick ? 100 : 70, 
+            height: r.isClick ? 100 : 70, 
+            opacity: 0 
+          }}
+          transition={{ duration: r.isClick ? 0.8 : 1, ease: 'easeOut' }}
+        />
+      ))}
     </>
   );
 }
