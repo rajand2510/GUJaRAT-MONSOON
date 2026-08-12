@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-// Initialize Redis client using environment variables
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+export const dynamic = 'force-dynamic';
+
+// Initialize Redis client safely to prevent Vercel build errors
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
 
 export async function GET(request) {
   try {
+    if (!redis) {
+      return NextResponse.json({ messages: [], playerState: null });
+    }
+
     const { searchParams } = new URL(request.url);
     const room = searchParams.get('room');
 
@@ -33,6 +38,10 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    if (!redis) {
+      return NextResponse.json({ success: false, error: 'Redis not configured' });
+    }
+
     const body = await request.json();
     const { room, type, message, author, userId, playerState } = body;
 
