@@ -145,7 +145,7 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
       />
       
       <div 
-        className="backdrop-blur-2xl border border-white/30 rounded-[100px] p-2 pr-6 flex items-center gap-4 relative overflow-hidden cursor-default"
+        className="backdrop-blur-2xl border border-white/30 rounded-[100px] p-2 pr-3 md:pr-6 flex items-center gap-2 md:gap-4 relative overflow-hidden cursor-default"
         style={{ 
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%)',
           boxShadow: '0 30px 60px rgba(0,0,0,0.4), inset 0 2px 10px rgba(255,255,255,0.3), inset 0 -2px 15px rgba(0,0,0,0.3)'
@@ -160,7 +160,7 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
         />
 
         {/* Circular Album Artwork */}
-        <div className={`w-[68px] h-[68px] rounded-full bg-black/40 flex items-center justify-center shrink-0 overflow-hidden relative border border-white/30 shadow-[0_4px_10px_rgba(0,0,0,0.5),inset_0_2px_5px_rgba(255,255,255,0.2)] z-10 ${isPlaying ? 'animate-[spin_8s_linear_infinite]' : ''}`}>
+        <div className={`w-12 h-12 md:w-[68px] md:h-[68px] rounded-full bg-black/40 flex items-center justify-center shrink-0 overflow-hidden relative border border-white/30 shadow-[0_4px_10px_rgba(0,0,0,0.5),inset_0_2px_5px_rgba(255,255,255,0.2)] z-10 ${isPlaying ? 'animate-[spin_8s_linear_infinite]' : ''}`}>
           {builtInCoverUrl || currentSong?.coverUrl ? (
             <div className="absolute inset-0 bg-cover bg-center opacity-70 transition-all duration-700" style={{backgroundImage: `url('${builtInCoverUrl || currentSong?.coverUrl}')`}}></div>
           ) : (
@@ -181,17 +181,17 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
         
         {/* Track Info & Progress */}
         <div className="flex-1 min-w-0 py-1 z-10">
-          <h3 className="text-white font-semibold text-[15px] truncate drop-shadow-sm tracking-wide">
+          <h3 className="text-white font-semibold text-sm md:text-[15px] truncate drop-shadow-sm tracking-wide">
             {currentSong?.title || "Select a song"}
           </h3>
-          <p className="text-white/70 text-xs truncate mb-2">
+          <p className="text-white/70 text-[10px] md:text-xs truncate mb-1 md:mb-2">
             {currentSong?.artist || "Unknown Artist"}
           </p>
           
           {/* Progress Slider & Time */}
-          <div className="flex items-center gap-3 w-full">
-            <span className="text-[10px] text-white/60 font-medium tracking-wider w-8">{formatTime(scrubTime !== null ? scrubTime : currentTime)}</span>
-            <div className="flex-1 group relative flex items-center h-4">
+          <div className="flex items-center gap-2 md:gap-3 w-full">
+            <span className="text-[9px] md:text-[10px] text-white/60 font-medium tracking-wider w-6 md:w-8 shrink-0 text-left">{formatTime(scrubTime !== null ? scrubTime : currentTime)}</span>
+            <div className="flex-1 group relative flex items-center h-8 md:h-4">
               <input 
                 type="range"
                 min={0}
@@ -211,13 +211,10 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
                 onChange={(e) => {
                   setScrubTime(Number(e.target.value));
                 }}
-                className="w-full h-1.5 appearance-none bg-black/40 rounded-full outline-none cursor-pointer relative z-10 opacity-0 group-hover:opacity-100 transition-opacity touch-none focus:outline-none focus:ring-0 [-webkit-tap-highlight-color:transparent]"
-                style={{
-                  background: `linear-gradient(to right, rgba(255,255,255,0) ${scrubTime !== null ? (scrubTime/duration)*100 : progress}%, rgba(0,0,0,0.4) ${scrubTime !== null ? (scrubTime/duration)*100 : progress}%)`
-                }}
+                className="absolute inset-0 w-full h-full appearance-none bg-transparent outline-none cursor-pointer z-20 opacity-0 touch-none [-webkit-tap-highlight-color:transparent]"
               />
               {/* Fake track for visual (always visible) */}
-              <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-1.5 bg-black/40 rounded-full pointer-events-none transition-all duration-300 shadow-inner group-hover:h-2">
+              <div className="absolute top-1/2 -translate-y-1/2 left-0 w-full h-1 md:h-1.5 bg-black/40 rounded-full pointer-events-none transition-all duration-300 shadow-inner group-hover:h-2">
                 <div 
                   className="absolute left-0 top-0 h-full bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-all duration-75 overflow-hidden wavy-track"
                   style={{ 
@@ -226,28 +223,28 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
                   }}
                 />
                 <div 
-                  className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,1)] transition-opacity duration-300 pointer-events-none ${isPlaying && !isDragging ? 'opacity-0' : 'opacity-100'}`}
+                  className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 md:w-3 md:h-3 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,1)] transition-opacity duration-300 pointer-events-none ${isPlaying && !isDragging ? 'opacity-0 md:opacity-100' : 'opacity-100'}`}
                   style={{ left: `calc(${scrubTime !== null ? (scrubTime/duration)*100 : progress}% - 5px)` }}
                 />
               </div>
             </div>
-            <span className="text-[10px] text-white/60 font-medium tracking-wider w-8 text-right">{formatTime(duration)}</span>
+            <span className="text-[9px] md:text-[10px] text-white/60 font-medium tracking-wider w-6 md:w-8 shrink-0 text-right">{formatTime(duration)}</span>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-3 shrink-0 pl-4 z-10">
+        <div className="flex items-center gap-2 md:gap-3 shrink-0 pl-1 md:pl-4 z-10">
           <button onClick={prevSong} className="text-white/80 hover:text-white hover:scale-110 transition-all cursor-pointer">
-            <SkipBack size={18} fill="currentColor" />
+            <SkipBack className="w-4 h-4 md:w-[18px] md:h-[18px]" fill="currentColor" />
           </button>
           <button 
             onClick={togglePlay} 
-            className="w-[42px] h-[42px] rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform shadow-lg cursor-pointer"
+            className="w-8 h-8 md:w-[42px] md:h-[42px] rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform shadow-lg cursor-pointer shrink-0"
           >
-            {isPlaying ? <Pause size={20} className="fill-current" /> : <Play size={20} className="fill-current ml-1" />}
+            {isPlaying ? <Pause className="w-4 h-4 md:w-[20px] md:h-[20px] fill-current" /> : <Play className="w-4 h-4 md:w-[20px] md:h-[20px] fill-current ml-0.5 md:ml-1" />}
           </button>
           <button onClick={nextSong} className="text-white/80 hover:text-white hover:scale-110 transition-all cursor-pointer">
-            <SkipForward size={18} fill="currentColor" />
+            <SkipForward className="w-4 h-4 md:w-[18px] md:h-[18px]" fill="currentColor" />
           </button>
         </div>
       </div>
