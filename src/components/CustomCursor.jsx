@@ -13,6 +13,12 @@ export default function CustomCursor({ mousePosition }) {
   
   const [isClicking, setIsClicking] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  useEffect(() => {
+    // Check if device supports touch (mobile/tablet)
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   useEffect(() => {
     cursorX.set(mousePosition.x);
@@ -43,6 +49,8 @@ export default function CustomCursor({ mousePosition }) {
       document.removeEventListener('mouseover', handleMouseOver);
     };
   }, []);
+
+  if (isTouchDevice) return null;
 
   return (
     <>
