@@ -95,7 +95,7 @@ export default function Navbar() {
       {/* Center - Online indicator */}
       <div className="md:absolute md:left-1/2 md:-translate-x-1/2 flex items-center gap-1.5 md:gap-2 bg-white/5 backdrop-blur-2xl border border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] rounded-full px-3 md:px-4 py-1.5 cursor-default">
         <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse shadow-[0_0_8px_rgba(154,203,98,0.6)]" />
-        <span className="font-medium text-xs text-white/90 drop-shadow-sm">{onlineCount} online</span>
+        <span className="font-medium text-xs text-white/90 drop-shadow-sm">{onlineCount} વરસાદ માણતા</span>
       </div>
 
       {/* Right - Links */}

@@ -1,85 +1,69 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, SkipForward, SkipBack, Disc } from 'lucide-react';
-import jsmediatags from 'jsmediatags/dist/jsmediatags.min.js';
+import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
 
 export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSong, prevSong, onScrub }) {
-  const audioRef = useRef(null);
+  const {
+    containerRef: ytContainerRef,
+    isReady,
+    duration,
+    currentTime: ytCurrentTime,
+    loadAndPlay,
+    cueVideo,
+    play,
+    pause,
+    seekTo,
+  } = useYouTubePlayer({ onEnded: nextSong });
+
   const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [builtInCoverUrl, setBuiltInCoverUrl] = useState(null);
-
-  // Extract Built-In ID3 Artwork
-  useEffect(() => {
-    if (!currentSong?.audioSrc) return;
-
-    // Fetch the file as a Blob first to avoid jsmediatags URL reader issues in Vite
-    fetch(currentSong.audioSrc)
-      .then(res => res.blob())
-      .then(blob => {
-        jsmediatags.read(blob, {
-          onSuccess: function(tag) {
-            const picture = tag.tags.picture;
-            if (picture) {
-              let base64String = "";
-              for (let i = 0; i < picture.data.length; i++) {
-                base64String += String.fromCharCode(picture.data[i]);
-              }
-              const base64 = "data:" + picture.format + ";base64," + window.btoa(base64String);
-              setBuiltInCoverUrl(base64);
-            } else {
-              setBuiltInCoverUrl(null);
-            }
-          },
-          onError: function(error) {
-            console.log("Could not read ID3 tags:", error);
-            setBuiltInCoverUrl(null);
-          }
-        });
-      })
-      .catch(err => {
-        console.log("Failed to fetch audio blob for tags:", err);
-        setBuiltInCoverUrl(null);
-      });
-  }, [currentSong]);
-
-  // Handle Play/Pause
-  useEffect(() => {
-    if (isPlaying) {
-      audioRef.current?.play().catch(e => console.log("Audio play prevented:", e));
-    } else {
-      audioRef.current?.pause();
-    }
-  }, [isPlaying, currentSong]);
-
-  // Robust Start Time Jump
-  useEffect(() => {
-    if (audioRef.current && currentSong) {
-      const audio = audioRef.current;
-      
-      const applyStartTime = () => {
-        if (currentSong.startTime) {
-          audio.currentTime = currentSong.startTime;
-          setCurrentTime(currentSong.startTime);
-        } else {
-          audio.currentTime = 0;
-          setCurrentTime(0);
-        }
-      };
-
-      if (audio.readyState >= 1) {
-        applyStartTime();
-      } else {
-        audio.addEventListener('loadedmetadata', applyStartTime, { once: true });
-      }
-    }
-  }, [currentSong]);
-
+  const [displayCurrentTime, setDisplayCurrentTime] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [scrubTime, setScrubTime] = useState(null);
+  const loadedVideoRef = useRef(null);
 
-  // Keyboard Shortcuts
+  // YouTube thumbnail as cover art
+  const coverUrl = currentSong?.youtubeId
+    ? `https://img.youtube.com/vi/${currentSong.youtubeId}/hqdefault.jpg`
+    : null;
+
+  // ── Load video when song changes ───────────────────────────────────
+  useEffect(() => {
+    if (!isReady || !currentSong?.youtubeId) return;
+
+    // Skip if same video is already loaded
+    if (loadedVideoRef.current === currentSong.youtubeId) return;
+    loadedVideoRef.current = currentSong.youtubeId;
+
+    if (isPlaying) {
+      loadAndPlay(currentSong.youtubeId, currentSong.startTime || 0);
+    } else {
+      cueVideo(currentSong.youtubeId, currentSong.startTime || 0);
+    }
+  }, [currentSong, isReady]);
+
+  // ── Handle play/pause ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!isReady || !currentSong?.youtubeId) return;
+
+    if (isPlaying) {
+      play();
+    } else {
+      pause();
+    }
+  }, [isPlaying, isReady]);
+
+  // ── Sync progress from YouTube player ──────────────────────────────
+  useEffect(() => {
+    if (!isDragging) {
+      setDisplayCurrentTime(ytCurrentTime);
+      if (duration > 0) {
+        setProgress((ytCurrentTime / duration) * 100);
+      }
+    }
+  }, [ytCurrentTime, duration, isDragging]);
+
+  // ── Keyboard Shortcuts ─────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Prevent triggering if user is typing
@@ -99,28 +83,6 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [togglePlay, nextSong, prevSong]);
 
-  // Handle Audio Events
-  const handleTimeUpdate = () => {
-    if (audioRef.current && !isDragging) {
-      const current = audioRef.current.currentTime;
-      const total = audioRef.current.duration;
-      setCurrentTime(current);
-      if (total) {
-        setProgress((current / total) * 100);
-      }
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const handleEnded = () => {
-    nextSong();
-  };
-
   const formatTime = (seconds) => {
     if (!seconds || isNaN(seconds)) return "0:00";
     const m = Math.floor(seconds / 60);
@@ -136,13 +98,10 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
       style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
       className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] md:w-[650px] z-20"
     >
-      <audio 
-        ref={audioRef}
-        src={currentSong?.audioSrc}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-      />
+      {/* Hidden YouTube Player – 1×1px off-screen */}
+      <div className="absolute w-0 h-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div ref={ytContainerRef} />
+      </div>
       
       <div 
         className="backdrop-blur-2xl border border-white/30 rounded-[100px] p-2 pr-3 md:pr-6 flex items-center gap-2 md:gap-4 relative overflow-hidden cursor-default"
@@ -159,10 +118,10 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
           }}
         />
 
-        {/* Circular Album Artwork */}
+        {/* Circular Album Artwork (YouTube Thumbnail) */}
         <div className={`w-12 h-12 md:w-[68px] md:h-[68px] rounded-full bg-black/40 flex items-center justify-center shrink-0 overflow-hidden relative border border-white/30 shadow-[0_4px_10px_rgba(0,0,0,0.5),inset_0_2px_5px_rgba(255,255,255,0.2)] z-10 ${isPlaying ? 'animate-[spin_8s_linear_infinite]' : ''}`}>
-          {builtInCoverUrl || currentSong?.coverUrl ? (
-            <div className="absolute inset-0 bg-cover bg-center opacity-70 transition-all duration-700" style={{backgroundImage: `url('${builtInCoverUrl || currentSong?.coverUrl}')`}}></div>
+          {coverUrl ? (
+            <div className="absolute inset-0 bg-cover bg-center opacity-70 transition-all duration-700" style={{backgroundImage: `url('${coverUrl}')`}}></div>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white/10 to-black/60 opacity-90 gap-0.5">
               {/* Dynamic Fallback Equalizer */}
@@ -190,21 +149,19 @@ export default function MusicPlayer({ currentSong, isPlaying, togglePlay, nextSo
           
           {/* Progress Slider & Time */}
           <div className="flex items-center gap-2 md:gap-3 w-full">
-            <span className="text-[9px] md:text-[10px] text-white/60 font-medium tracking-wider w-6 md:w-8 shrink-0 text-left">{formatTime(scrubTime !== null ? scrubTime : currentTime)}</span>
+            <span className="text-[9px] md:text-[10px] text-white/60 font-medium tracking-wider w-6 md:w-8 shrink-0 text-left">{formatTime(scrubTime !== null ? scrubTime : displayCurrentTime)}</span>
             <div className="flex-1 group relative flex items-center h-8 md:h-4">
               <input 
                 type="range"
                 min={0}
                 max={duration || 100}
-                value={scrubTime !== null ? scrubTime : currentTime}
+                value={scrubTime !== null ? scrubTime : displayCurrentTime}
                 onPointerDown={() => setIsDragging(true)}
                 onPointerUp={(e) => {
                   setIsDragging(false);
                   const newTime = Number(e.target.value);
-                  if (audioRef.current) {
-                    audioRef.current.currentTime = newTime;
-                  }
-                  setCurrentTime(newTime);
+                  seekTo(newTime);
+                  setDisplayCurrentTime(newTime);
                   setScrubTime(null);
                   if (onScrub) onScrub(newTime);
                 }}
